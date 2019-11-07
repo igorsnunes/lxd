@@ -34,8 +34,8 @@ function vm_gen() {
 
 echo "Criando redes "
 lxc network create DMZ ipv4.address=192.168.20.254/24 ipv4.nat=false ipv4.dhcp=false
-lxc network create RSERVERS ipv4.address=192.168.30.254/24 ipv4.nat=false ipv4.dhcp=false
-lxc network create RWEB ipv4.address=192.168.40.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network create RSERVERS ipv4.address=192.168.40.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network create RWEB ipv4.address=192.168.30.254/24 ipv4.nat=false ipv4.dhcp=false
 lxc network create R1R2 ipv4.address=192.168.50.254/24 ipv4.nat=false ipv4.dhcp=false
 
 ## DNS AUTH
@@ -56,10 +56,10 @@ vm_gen "WWW2" "RWEB" "eth0" "192.168.30.3" "192.168.30.1"
 
 
 ### SLOG
-vm_gen "SLOG" "RSERVERS" "eth0" "192.168.40.2" "192.168.30.1"
+vm_gen "SLOG" "RSERVERS" "eth0" "192.168.40.2" "192.168.40.1"
 
 ### DNSREC
-vm_gen "DNSREC" "RSERVERS" "eth0" "192.168.40.3" "192.168.30.1"
+vm_gen "DNSREC" "RSERVERS" "eth0" "192.168.40.3" "192.168.40.1"
 
 
 ### R2
@@ -78,14 +78,20 @@ lxc network attach R1R2 R1 eth2 ## REVER! TEM QUE LIGAR EM F2
 [ $? -ne 0 ] && echo "erro ligando interfaces de R2-R1"
 
 echo "Ligando interfaces de R2"
-lxc network attach RWEB R2 eth1
-[ $? -ne 0 ] && echo "erro ligando interfaces de RWEB-R2"
+lxc network attach R1R2 R2 eth1 ## rever, tem que ligar no firewall
+[ $? -ne 0 ] && echo "erro ligando interfaces de R1-R2"
 lxc network attach RSERVERS R2 eth2
 [ $? -ne 0 ] && echo "erro ligando interfaces de RSERVER-R2"
-lxc network attach R1R2 R2 eth3 ## rever, tem que ligar no firewall
-[ $? -ne 0 ] && echo "erro ligando interfaces de R1-R2"
+lxc network attach RWEB R2 eth3
+[ $? -ne 0 ] && echo "erro ligando interfaces de RWEB-R2"
 
 echo "Copiando configuracoes"
+
+echo "net.ipv4.ip_forward=1" > /tmp/sysctl.conf
+echo "net.ipv6.conf.all.forwarding=1" >> /tmp/sysctl.conf
+
+lxc file push /tmp/sysctl.conf R1/etc/sysctl.conf
+lxc file push /tmp/sysctl.conf R2/etc/sysctl.conf
 
 echo "auto lo">/tmp/interfaces
 echo "iface lo inet loopback">>/tmp/interfaces
@@ -106,10 +112,10 @@ echo "iface eth1 inet static">>/tmp/interfaces
 echo "	address 192.168.50.2/24">>/tmp/interfaces
 echo "auto eth2">>/tmp/interfaces
 echo "	iface eth2 inet static">>/tmp/interfaces
-echo "	address 192.168.30.1/24">>/tmp/interfaces
+echo "	address 192.168.40.1/24">>/tmp/interfaces
 echo "auto eth3">>/tmp/interfaces
 echo "	iface eth3 inet static">>/tmp/interfaces
-echo "	address 192.168.40.1/24">>/tmp/interfaces
+echo "	address 192.168.30.1/24">>/tmp/interfaces
 lxc file push /tmp/interfaces R2/etc/network/interfaces
 
 
@@ -120,8 +126,17 @@ do
 done
 echo "Aguardando 10 segundos para garantir que R esta no ar"
 sleep 10
+
+echo "configurando rotas"
+lxc exec R1 -- ip route add default dev eth0
+lxc exec R1 -- ip route add 192.168.30.0/24 via 192.168.50.2
+lxc exec R1 -- ip route add 192.168.40.0/24 via 192.168.50.2
+
+lxc exec R2 -- ip route add default dev eth1
+lxc exec R2 -- ip route add 192.168.20.0/24 via 192.168.50.1
+
 for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
 do
 	echo "Instalando ssh em $i"
-	lxc exec $i -- apt install -y openssh-server
+	#lxc exec $i -- apt install -y openssh-server
 done
