@@ -33,9 +33,13 @@ function vm_gen() {
 }
 
 echo "Criando redes "
-lxc network create DMZ ipv4.address=192.168.20.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network delete DMZ 
+lxc network create DMZ ipv4.address=192.168.20.254/24 ipv4.nat=true ipv4.dhcp=false
+lxc network delete RSERVERS
 lxc network create RSERVERS ipv4.address=192.168.40.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network delete RWEB
 lxc network create RWEB ipv4.address=192.168.30.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network delete R1R2
 lxc network create R1R2 ipv4.address=192.168.50.254/24 ipv4.nat=false ipv4.dhcp=false
 
 ## DNS AUTH
@@ -72,6 +76,10 @@ lxc copy debian9padrao R1
 
 
 echo "Ligando interfaces de R1"
+
+lxc network attach lxdbr0 R1 eth0
+[ $? -ne 0 ] && echo "erro ligando interfaces de DMZ-R1"
+
 lxc network attach DMZ R1 eth1
 [ $? -ne 0 ] && echo "erro ligando interfaces de DMZ-R1"
 lxc network attach R1R2 R1 eth2 ## REVER! TEM QUE LIGAR EM F2
@@ -132,11 +140,11 @@ lxc exec R1 -- ip route add default dev eth0
 lxc exec R1 -- ip route add 192.168.30.0/24 via 192.168.50.2
 lxc exec R1 -- ip route add 192.168.40.0/24 via 192.168.50.2
 
-lxc exec R2 -- ip route add default dev eth1
+lxc exec R2 -- ip route add default via 192.168.50.1
 lxc exec R2 -- ip route add 192.168.20.0/24 via 192.168.50.1
 
 for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
 do
 	echo "Instalando ssh em $i"
-	#lxc exec $i -- apt install -y openssh-server
+	##lxc exec $i -- apt install -y openssh-server
 done
