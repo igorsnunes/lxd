@@ -36,11 +36,11 @@ echo "Criando redes "
 lxc network delete DMZ 
 lxc network create DMZ ipv4.address=192.168.20.254/24 ipv4.nat=true ipv4.dhcp=false
 lxc network delete RSERVERS
-lxc network create RSERVERS ipv4.address=192.168.40.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network create RSERVERS ipv4.address=192.168.40.254/24 ipv4.nat=true ipv4.dhcp=false
 lxc network delete RWEB
-lxc network create RWEB ipv4.address=192.168.30.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network create RWEB ipv4.address=192.168.30.254/24 ipv4.nat=true ipv4.dhcp=false
 lxc network delete R1R2
-lxc network create R1R2 ipv4.address=192.168.50.254/24 ipv4.nat=false ipv4.dhcp=false
+lxc network create R1R2 ipv4.address=192.168.50.254/24 ipv4.nat=true ipv4.dhcp=false
 
 ## DNS AUTH
 vm_gen "DNSAUTH" "DMZ" "eth0" "192.168.20.4" "192.168.20.1"
@@ -149,3 +149,8 @@ echo "INSTALANDO openssh-server e fail2ban em SSHS"
 
 echo "INSTALANDO nginx em PROXY"
 ./gera-proxy.sh PROXY
+
+echo "INSTALANDO apache em WWW1 e WWW2"
+cd /home/inf500/574-SDN/lxd/inf574/final/www
+./instala-www.sh WWW1
+./instala-www.sh WWW2
