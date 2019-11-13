@@ -143,8 +143,9 @@ lxc exec R1 -- ip route add 192.168.40.0/24 via 192.168.50.2
 lxc exec R2 -- ip route add default via 192.168.50.1
 lxc exec R2 -- ip route add 192.168.20.0/24 via 192.168.50.1
 
-for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
-do
-	echo "Instalando ssh em $i"
-	##lxc exec $i -- apt install -y openssh-server
-done
+
+echo "INSTALANDO openssh-server e fail2ban em SSHS"
+./instala-ssh.sh SSHS
+
+echo "INSTALANDO nginx em PROXY"
+./gera-proxy.sh PROXY
