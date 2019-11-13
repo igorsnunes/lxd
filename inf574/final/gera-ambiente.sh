@@ -147,7 +147,8 @@ lxc exec R2 -- ip route add 192.168.20.0/24 via 192.168.50.1
 
 echo "Configurando nat de R1"
 lxc exec R1 -- /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
+lxc exec R1 -- /sbin/iptables -t nat -A PREROUTING -s 10.19.70.0/24 -i eth0 -p tcp  --dport 80  -j DNAT --to-destination 192.168.20.3
+lxc exec R1 -- /sbin/iptables -t nat -A PREROUTING -s 10.19.70.0/24 -i eth0 -p tcp  --dport 22  -j DNAT --to-destination 192.168.20.2
 
 echo "Iniciando containers"
 for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
