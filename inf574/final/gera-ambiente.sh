@@ -168,6 +168,11 @@ cd www
 ./instala-www.sh WWW2
 cd -
 
+echo "INSTALANDO graylog em SLOG"
+cd graylog
+./instala-graylog.sh SLOG
+cd -
+
 for j in "openssh-server"
 do
 	echo "Instalando  $j nos containers"
@@ -176,3 +181,4 @@ do
 		lxc exec $i -- /usr/bin/apt install -y $j 
 	done
 done
+
