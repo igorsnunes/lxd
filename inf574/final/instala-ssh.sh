@@ -9,10 +9,11 @@ if [ "$#" -ne 1 ]; then
     echo "Por exemplo, ./instala-ssh.sh A1"
 else
     echo "Instalando pacotes no container " $1
-    lxc exec $1 -- /usr/bin/apt install -y openssh-server libpam-google-authenticator
+    lxc exec $1 -- /usr/bin/apt install -y openssh-server fail2ban libpam-google-authenticator
     echo "Copiando arquivos de configuracao"
     lxc file push conf/$1/sshd_config $1/etc/ssh/sshd_config -p --uid 0 --gid 0 --mode 0644
     lxc file push conf/$1/sshd $1/etc/pam.d/sshd -p --uid 0 --gid 0 --mode 0644
+    lxc file push conf/$1/jail.local $1/etc/fail2ban/jail.local -p --uid 0 --gid 0 --mode 0644
     lxc exec $1 -- passwd root
     lxc exec $1 -- google-authenticator
     echo "Copiando arquivos de configuracao"
