@@ -182,3 +182,19 @@ do
 	done
 done
 
+FKE=newkey
+KEY=/tmp/$FKE
+#lxc exec SSHS -- ssh-keygen -b 2048 -t rsa -f $KEY -N ""
+lxc exec SSHS -- ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -N ""
+lxc exec SSHS -- rm -rf /root/.ssh/known_hosts
+lxc file pull SSHS/root/.ssh/id_rsa.pub $KEY.pub
+for CNT in "DNSAUTH" "PROXY" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1";
+do
+	echo "Colocando chave publica de SSHS em $CNT"
+	lxc exec $CNT -- mkdir -p /root/.ssh
+	lxc exec $CNT -- chmod 700 /root/.ssh
+	lxc file  push  $KEY.pub  $CNT/root/.ssh/
+	lxc exec $CNT -- mv /root/.ssh/$FKE.pub  /root/.ssh/authorized_keys
+	lxc exec $CNT -- chmod 600 /root/.ssh/authorized_keys
+	lxc exec $CNT -- rm -rf /root/.ssh/$FKE.pub
+done
