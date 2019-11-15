@@ -65,6 +65,8 @@ vm_gen "SLOG" "RSERVERS" "eth0" "192.168.40.2" "192.168.40.1"
 ### DNSREC
 vm_gen "DNSREC" "RSERVERS" "eth0" "192.168.40.3" "192.168.40.1"
 
+### GER
+vm_gen "GER" "RSERVERS" "eth0" "192.168.40.4" "192.168.40.1"
 
 ### R2
 echo "Criando roteador R2"
@@ -129,7 +131,7 @@ lxc file push /tmp/interfaces R2/etc/network/interfaces
 
 
 echo "Iniciando containers"
-for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
+for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1" "GER"
 do
 	lxc start $i
 done
@@ -149,12 +151,6 @@ echo "Configurando nat de R1"
 lxc exec R1 -- /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 lxc exec R1 -- /sbin/iptables -t nat -A PREROUTING -s 10.19.70.0/24 -i eth0 -p tcp  --dport 80  -j DNAT --to-destination 192.168.20.3
 lxc exec R1 -- /sbin/iptables -t nat -A PREROUTING -s 10.19.70.0/24 -i eth0 -p tcp  --dport 22  -j DNAT --to-destination 192.168.20.2
-
-echo "Iniciando containers"
-for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
-do
-	lxc start $i
-done
 
 echo "INSTALANDO openssh-server e fail2ban em SSHS"
 ./instala-ssh.sh SSHS
@@ -176,11 +172,19 @@ cd -
 for j in "openssh-server"
 do
 	echo "Instalando  $j nos containers"
-	for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
+	for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1" "GER"
 	do
 		lxc exec $i -- /usr/bin/apt install -y $j 
 	done
 done
+
+echo "Instalando  Agente SNMP nos containers"
+for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1" "GER"
+do
+	./gera-snmp.sh $i
+done
+
+./gera_zabbix.sh GER
 
 FKE=newkey
 KEY=/tmp/$FKE
