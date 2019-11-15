@@ -173,6 +173,14 @@ cd graylog
 ./instala-graylog.sh SLOG
 cd -
 
+echo "INSTALANDO o rsyslog"
+cd rsyslog
+for i in "DNSAUTH" "PROXY" "SSHS" "WWW1" "WWW2" "SLOG" "DNSREC" "R2" "R1"
+do
+	./instala-rsyslog.sh $i
+done
+cd -
+
 for j in "openssh-server"
 do
 	echo "Instalando  $j nos containers"
